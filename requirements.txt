@@ -1,0 +1,4 @@
+numpy
+scipy
+torch>=2.5
+h5py

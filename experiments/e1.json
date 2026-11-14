@@ -1,0 +1,122 @@
+{
+  "study_id": "e1_sdc64_od49_56_20261024_v1",
+  "no_content_hashes": true,
+  "distance_grid": 32,
+  "distance_bounds_inclusive": [
+    49,
+    56
+  ],
+  "prediction_grid": 64,
+  "departures": [
+    28800,
+    29700,
+    30600,
+    31500,
+    32400,
+    33300,
+    34200,
+    35100,
+    36000,
+    36900,
+    37800,
+    38700,
+    39600,
+    40500,
+    41400,
+    42300
+  ],
+  "samplers": [
+    "cluster",
+    "uniform_grid",
+    "hierarchical_grid"
+  ],
+  "training_seeds": [
+    42
+  ],
+  "split_seed": 20261024,
+  "sampler_seed": 20261025,
+  "distance_quota_rule": "largest remainder proportional to model-blind geometric eligible ordered 64-cell-pair counts; shared by all samplers within city",
+  "cluster": "four geographic-coordinate clusters per occupied 64 cell; five Lloyd iterations; replacement initialization; choose one random member of largest cluster; deterministic first ties",
+  "uniform_grid": "up to four distinct nodes per occupied 64 cell; first sampled node is source; all sampled nodes are destinations",
+  "hierarchical_grid": "nearest node to each occupied 128 subcell center, original-ID ties; source and destination representatives",
+  "reverse_od_role": "same candidate role for both directions",
+  "candidate_role_probabilities": {
+    "G0_train": 0.85,
+    "G0_Vselect": 0.025,
+    "G0_Vcal": 0.025,
+    "G0_base_test": 0.05,
+    "future_G1_test": 0.05
+  },
+  "candidate_role_note": "candidate-domain partition probabilities only; final corpus counts retain 80/10/10; all future_G1_test-role candidates excluded from every G0 corpus",
+  "training_points_per_method": {
+    "BJ": 800000,
+    "XA": 400000
+  },
+  "Vselect_points": {
+    "BJ": 50000,
+    "XA": 24992
+  },
+  "Vcal_points": {
+    "BJ": 50000,
+    "XA": 25008
+  },
+  "base_test_points": {
+    "BJ": 100000,
+    "XA": 50000
+  },
+  "label_model": "canonical_pair_periodic_fifo_continuous_pwl_no_ceil_v1",
+  "label_arithmetic": "long double scalar Dijkstra; float64 arrival sidecars; original node path and integer canonical knots permit exact rational reconstruction; all routes replayed edge by edge, one rational witness per SSSP",
+  "model": {
+    "patch": 4,
+    "width": 128,
+    "depth": 4,
+    "heads": 4,
+    "tokens": 256,
+    "condition_width": 5
+  },
+  "training": {
+    "epochs": 50,
+    "batch_size": 64,
+    "fg_weight": 10,
+    "peak_lr": 0.0003,
+    "min_lr": 3e-05,
+    "warmup_updates": 100,
+    "schedule": "cosine",
+    "optimizer": "AdamW",
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "weight_decay": 0.01,
+    "gradient_clip_norm": 1.0,
+    "precision": "fp32_tf32",
+    "curriculum": false,
+    "shuffle": "one complete seeded permutation per epoch; each row once",
+    "evaluation_epochs": [
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+      45,
+      50
+    ]
+  },
+  "primary_selection_metric": "q = min(point micro recall, point micro F1); exact all-score sweep on Vselect",
+  "epoch_tie_break": "global max-q within 1e-8, then fewer mean predicted cells, greater precision, earlier epoch",
+  "calibration": "same exact max-q sweep and compactness/high-threshold tie rule on Vcal only, after checkpoint selection",
+  "inference": {
+    "nfe": 1,
+    "point_batch": 16,
+    "eval_noise_seed": 20260912,
+    "output_score": "clip((occupancy_signed+1)/2,0,1)",
+    "handoff": "road support filter then insert known endpoints",
+    "progress": "auxiliary training channel only"
+  },
+  "reporting": "point micro counts per complete seed/test; six rows report paired-seed mean and sample standard deviation; all seeds and failures retained",
+  "pipeline_order": "complete XA seed42 chain before remaining seeds/BJ training; BJ label generation may follow completed XA labels",
+  "formal_timing": "E1 is quality only; colocated wall time is not isolated inference latency"
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "sampler": "hierarchical_grid",
+  "seed": 20260905,
+  "fine_grid_dim": 2,
+  "min_distance": 2,
+  "max_distance": 4,
+  "interval_seconds": 1800,
+  "point_step_seconds": 900,
+  "start_second": 43200,
+  "start_time_status": "fixed_by_adr_0013",
+  "routing_graph_policy": "canonical_pair_periodic_fifo_lpf_v1",
+  "absolute_shift_seconds": 5,
+  "relative_shift_threshold": 0.1,
+  "hotspot_fraction": 0.2,
+  "targeted_fraction": 0.2,
+  "qualification_chunk_groups": 4096,
+  "shard_byte_budget": 67108864
+}

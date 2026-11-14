@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+build/
+.venv/
+datasets/
+runs/
+checkpoints/
+*.h5
+*.npz
+*.npy
+*.pt
+*.pth
+*.so
+*.dylib
+.DS_Store

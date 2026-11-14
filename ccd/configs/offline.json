@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "sampler": "hierarchical_grid",
+  "seed": 20260905,
+  "cluster_count": 4,
+  "candidates_per_grid": 4,
+  "fine_grid_dim": 2,
+  "min_distance": 2,
+  "max_distance": 4,
+  "interval_seconds": 14400,
+  "point_step_seconds": 900,
+  "start_second": 28800,
+  "shard_byte_budget": 67108864,
+  "probe_groups": 128,
+  "start_time_status": "fixed_by_adr_0010",
+  "routing_graph_policy": "canonical_pair_periodic_fifo_lpf_v1"
+}

@@ -1,0 +1,184 @@
+{
+  "version": "E3_native64_region_components_v1",
+  "created_at_utc": "2026-10-24T18:33:06+00:00",
+  "training_seeds": [
+    42
+  ],
+  "hash_verification": false,
+  "status": "BASELINE_PROTOCOL_FROZEN_BEFORE_BASELINE_TESTING",
+  "matrix": {
+    "cities": [
+      "BJ",
+      "XA"
+    ],
+    "snapshots": [
+      "G0",
+      "G1"
+    ],
+    "methods": [
+      "SSE_JIT_native64_component",
+      "PiT_DOT_native64_component",
+      "SSP"
+    ],
+    "required_rows": 12
+  },
+  "grid": 64,
+  "distance_grid": 32,
+  "distance_range": [
+    49,
+    56
+  ],
+  "common_support_and_endpoint_insertion": true,
+  "GT": {
+    "G0": "accepted E1 native64 continuous point labels",
+    "G1": "accepted E2 native64 continuous point labels",
+    "G0_test_role": "base_test",
+    "G1_test_role": "mixed_test",
+    "full_points": {
+      "BJ": {
+        "G0": 100000,
+        "G1": 20000
+      },
+      "XA": {
+        "G0": 50000,
+        "G1": 10000
+      }
+    },
+    "points_per_OD": {
+      "G0": 16,
+      "G1": 2
+    },
+    "all_roles_inherited_without_resampling": true
+  },
+  "training_data": {
+    "G0": "same accepted E1 hierarchical_grid_train role; no test or calibration path labels in feature construction",
+    "G1": "same accepted E2 sdc_Afit role",
+    "points": {
+      "BJ": {
+        "G0": 800000,
+        "G1": 64000
+      },
+      "XA": {
+        "G0": 400000,
+        "G1": 32000
+      }
+    },
+    "epochs": {
+      "G0": 50,
+      "G1": 5
+    },
+    "batch_size": 64,
+    "complete_without_replacement_epochs": true,
+    "source_seed": 42,
+    "G1_initialization": "same-method same-city selected G0 weights and embeddings; fresh method-native optimizer"
+  },
+  "selection": {
+    "SSE_G0": "common Vselect at epochs5,10,...50; min(microRecall,microF1), compactness/precision/earlier-epoch ties; identical E1 rule",
+    "SSE_G1": "common Aselect at each full epoch1..5, same rule",
+    "PiT": "fixed final epoch50/5 checkpoint, following released diffusion trainer fixed-horizon selection; no test-based or extra generated-region checkpoint search",
+    "PiT_validation": "full common Vselect/Aselect fixed-noise Huber denoising-loss diagnostics; no region-query subset substitutes for testing",
+    "calibration": "complete common Vcal for G0 or Acal for G1; same accepted exact threshold objective and search budget",
+    "thresholds_never_selected_on_test": true
+  },
+  "SSE": {
+    "repository": "https://github.com/edenjing/JIT-TP",
+    "revision": "259136246ef81ef246834e226e36cc406227bbba",
+    "model": "upstream SSRegionPred score-vector branch in eval mode, train_phase=True",
+    "node_embedding_dim": 64,
+    "region_embedding_dim": 64,
+    "query_MLP": [
+      256,
+      512,
+      256
+    ],
+    "dropout": 0.2,
+    "active_loss": "unweighted BCE",
+    "optimizer": "Adam",
+    "lr": 0.001,
+    "scheduler": "ReduceLROnPlateau on common selection recall, patience2 evaluations,factor0.8,threshold0.001; no early termination of prescribed full epochs",
+    "departure_input": false,
+    "weights_argument": "constant legal ones; unused by released active model/loss",
+    "preprocessing": {
+      "node_graph": "directed road edges with occurrence frequency from only G0 training reference paths",
+      "region_graph": "adjacent native64 regions weighted by mean training-path crossing travel time",
+      "node2vec": {
+        "walk_length": 30,
+        "num_walks": 25,
+        "p": 1.0,
+        "q": 1.0,
+        "dimension": 64,
+        "window": 5,
+        "epochs": 10,
+        "workers": 32,
+        "seed": 42
+      },
+      "unvisited_embeddings": "seeded normal fallback as upstream; record actual fallback counts",
+      "G1": "reuse G0 preprocessing as initialization; embeddings remain trainable and update under full G1 supervised fine tuning"
+    },
+    "adapter_disclosures": [
+      "native64 region_num4096, actual node registry and fixed bbox",
+      "common route-region binary labels replace upstream external C++ A-star examined-region labels; this is a path-region-supervised component adapter, not original full-system reproduction",
+      "original linear concat/mean score head is preserved; no silent interaction/time encoder upgrade",
+      "same complete holdouts and calibrated common postprocessing"
+    ]
+  },
+  "PiT": {
+    "repository": "https://github.com/Logan-Lin/DOT",
+    "revision": "47243eb459602aa655441ed9182bd38c154750b8",
+    "model": "upstream conditioned Unet",
+    "channels": 3,
+    "channel_semantics": [
+      "occupancy signed mask",
+      "normalized time of day at FIRST visit to a cell",
+      "normalized elapsed fraction at FIRST visit"
+    ],
+    "dim": 64,
+    "init_dim": 4,
+    "dim_mults": [
+      1,
+      2,
+      4
+    ],
+    "condition": "odt",
+    "loss": "upstream Huber noise prediction",
+    "optimizer": "Adam",
+    "lr": 0.001,
+    "diffusion_steps": 1000,
+    "beta_schedule": "upstream effective linear 0.0001 to0.02",
+    "generation": "all1000 released DDPM reverse transitions; no SSP NFE1 substitution",
+    "storage_adapter": "retain final image only; preserve every reverse transition and random draw",
+    "data_adapter": "fixed bbox and floor64 common grid rather than dataset-extrema/nearest; construct3 channels from accepted raw native paths/arrivals, not SSP last-visit tensors",
+    "label_source": "common legal shortest-point reference paths rather than original raw historical taxi trajectory corpus; explicitly a region-only benchmark adaptation",
+    "epoch_adapter": "complete without-replacement point epochs rather than upstream replacement selection",
+    "model_budget": "matched full50 base/5 updated epochs rather than upstream CLI200 default;50 is a published README example configuration",
+    "TTE_head_excluded": true
+  },
+  "inference": {
+    "eval_seed": 20260912,
+    "SSE": "deterministic OD-only score; genuine time-agnostic point-region generator, not a test-GT or interval-union proxy",
+    "PiT": "one Gaussian/DDPM realization per designated point; fixed OD-group-local GPU generator seeded by accepted identity mixer(city,snapshot,role,group_id), independent of model checkpoint/worker/shard",
+    "batch_per_OD": {
+      "G0": 16,
+      "G1": 2
+    },
+    "quality_only_no_latency_claim": true,
+    "SSP": "reuse genuine fully audited E1/E2 scores and original calibration thresholds; zero retraining"
+  },
+  "metrics": {
+    "point": "micro TP/FP/FN over complete point holdout",
+    "initial_region": "union per complete OD group across16 G0 or2 G1 point masks",
+    "allowed_arc": "both original node endpoint64 cells active in initial union",
+    "edge_reduction": "100*(1-allowed_directed_arcs/all_original_directed_arcs), mean over full OD groups",
+    "no_connectivity_repair": true,
+    "no_GES_or_interval_optimality_claim": true
+  },
+  "scope": "disclosed native64 route-region-supervised component adapters, not full JIT-TP traffic-prediction framework or DOT travel-time oracle reproduction",
+  "gates": [
+    "accepted E1 and E2",
+    "source/native64 representations and legal features checked",
+    "full preprocessing and model budgets recorded",
+    "complete point outputs for all12 cells",
+    "independent full count,mask,arc and lineage audit",
+    "all12 E3 rows and compiled LaTeX"
+  ]
+}

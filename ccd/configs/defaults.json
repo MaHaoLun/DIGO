@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "dataset_input_root": "data/staged",
+  "runtime_output_root": "runs",
+  "runtime_output_policy": "exclusive_new_child",
+  "overwrite_existing_run": false,
+  "historical_asset_reuse": false
+}

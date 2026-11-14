@@ -1,0 +1,158 @@
+{
+  "version": "E2_native64_sameclock_v1",
+  "created_at_utc": "2026-10-24T16:12:45+00:00",
+  "status": "PROTOCOL_FROZEN_BEFORE_G1_QUALIFICATION",
+  "training_seeds": [
+    42
+  ],
+  "hash_verification": false,
+  "native_prediction_grid": 64,
+  "sampling_subgrid": 128,
+  "distance_grid": 32,
+  "distance_range": [
+    49,
+    56
+  ],
+  "departures": [
+    43200,
+    44100
+  ],
+  "monitoring_times": [
+    43200,
+    44100,
+    45000
+  ],
+  "routing_policy": "canonical_pair_periodic_fifo_continuous_pwl_no_ceil_v1",
+  "label_arithmetic": "native long double; raw paths and float64 arrival sidecars plus integer knots retained",
+  "role_partition": {
+    "source": "E1 p0_plan.role_codes; unchanged unordered-pair seeded permutation",
+    "split_seed": 20261024,
+    "role_codes": {
+      "Afit": 0,
+      "Aselect": 1,
+      "Acal": 2,
+      "excluded_G0_test": 3,
+      "mixed_test": 4
+    },
+    "exclude_all_historical_development_exposures": true,
+    "G1_test_role_excluded_from_all_G0_train_and_development": true
+  },
+  "sampler_seed": 20261026,
+  "sampler": {
+    "SDC": "one closest-to-center node per occupied128 subcell; ordinary uniform without replacement over its eligible role pool; target candidates from remaining shuffled pool sorted stably by source64_score+destination64_score",
+    "RandomFT": "uniform without replacement over all eligible directed node OD pairs in role0; no forced ordinary/targeted mixture and no qualification filter",
+    "ordinary_fraction": 0.8,
+    "targeted_fraction": 0.2,
+    "qualification_chunk_groups": 4096,
+    "targeted_eligibility": "any affected departure in the complete two-departure group",
+    "common_development_and_test": "single shared SDC/reference80/20 source mixture for Aselect,Acal,mixed_test; never strategy-specific tests"
+  },
+  "detector": {
+    "absolute_shift_seconds": 5,
+    "relative_shift_threshold": 0.1,
+    "comparison": "greater_than_or_equal_AND",
+    "epsilon_time_seconds": 1,
+    "canonical_pair_rule": "lower-node-id directed representative in reciprocal topology, identical to legacy detector",
+    "absolute_change": "sum(abs(G1-G0) over three monitor knots)/3",
+    "relative_change": "sum(abs(G1-G0))/max(sum(G0_monitor_weights),3)",
+    "significant_pair_rule": "sum_absolute>=15 AND 10*sum_absolute>=max(sum_G0,3)",
+    "cell_score": "sum significant-pair relative_change at its endpoint64 cells; once when both endpoints share a cell",
+    "hotspot_fraction": 0.2,
+    "hotspot_count_rule": "ceil(number_of_positive_score64_cells/5)",
+    "ranking": "score descending; grid ID ascending ties"
+  },
+  "affected": {
+    "changed_edge_at_entry": "at least one G1-route arc in a detector-significant canonical pair has different G0/G1 continuous travel time at the same G1 entry time",
+    "internal_hotspot": "a non-first/non-last path node visits a selected hotspot64 cell; an endpoint cell counts if also visited internally",
+    "same_clock_path_changed": "G1 node path differs from the stable same-departure G0 reference path",
+    "point": "changed_edge_at_entry OR internal_hotspot OR same_clock_path_changed",
+    "group": "any point affected",
+    "main_test": "all complete mixed_test groups whose group predicate is true; retain both departures",
+    "additional_diagnostics": [
+      "true affected-point count and affected-points-only metrics",
+      "all mixed-test metrics",
+      "fully frozen NoFT weights and original G0 threshold"
+    ],
+    "duration_change": "diagnostic only; not an additional eligibility clause"
+  },
+  "budgets": {
+    "BJ": {
+      "Afit_points_per_FT": 64000,
+      "Aselect_points": 8000,
+      "Acal_points": 8000,
+      "mixed_test_points": 20000,
+      "FT_epochs": 5,
+      "batch_size": 64,
+      "updates_per_FT": 5000,
+      "visits_per_FT": 320000
+    },
+    "XA": {
+      "Afit_points_per_FT": 32000,
+      "Aselect_points": 4000,
+      "Acal_points": 4000,
+      "mixed_test_points": 10000,
+      "FT_epochs": 5,
+      "batch_size": 64,
+      "updates_per_FT": 2500,
+      "visits_per_FT": 160000
+    }
+  },
+  "training": {
+    "parent_method": "hierarchical_grid",
+    "parent_checkpoint_relative": "training/{city}_hierarchical_grid_seed42/selected.pt",
+    "parent_selected_epoch": 50,
+    "inherit_weights": true,
+    "inherit_optimizer": false,
+    "optimizer": "AdamW",
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "weight_decay": 0.01,
+    "epsilon": 1e-08,
+    "clip_grad_norm": 1.0,
+    "precision": "fp32_tf32",
+    "peak_lr": 1e-05,
+    "min_lr": 1e-06,
+    "schedule": "cosine",
+    "warmup_updates": 100,
+    "fg_weight": 10,
+    "loss": "identical accepted E1 two-channel CFM with occupancy weights and actual4096-cell normalization",
+    "training_seed": 42,
+    "sampler_epoch_seed": 142,
+    "noise_generator_seed": 242,
+    "time_generator_seed": 342,
+    "shuffle": "each full point row exactly once per epoch",
+    "selection": "all common Aselect points after each epoch1..5; min(microRecall,microF1), same compactness/precision/earlier-epoch ties as E1",
+    "calibration": "all common Acal points after checkpoint selection; same exact threshold criterion as E1"
+  },
+  "evaluation": {
+    "eval_seed": 20260912,
+    "nfe": 1,
+    "prediction_batch": 2,
+    "point_score": "clip((generated_occupancy+1)/2,0,1)",
+    "mask": "threshold then common road_support and endpoint insertion",
+    "NoFT_main": "weights frozen; recalibrate on the same complete Acal role",
+    "NoFT_diagnostic": "same cached base scores with the original G0 threshold; zero G1 calibration labels for this diagnostic",
+    "metrics": "point micro TP/FP/FN; no across-seed standard deviation",
+    "save_all_mixed_test_scores": true,
+    "expected_full_mixed_test_predictions": 90000
+  },
+  "costs": {
+    "charge_all_qualification_rejected_and_selected_paths": true,
+    "same_departure_G0_references_for_all_selected_roles": true,
+    "reuse_physically_cached_GT_without_recomputation": true,
+    "charge_any_recomputed_path_separately": true,
+    "retain_per_source_checkpoint_and_stdout_stderr_exit_status": true
+  },
+  "freeze_order": [
+    "freeze this contract and source/role capacity before GT qualification",
+    "qualify targets and freeze all shared final development/test identities without model predictions",
+    "independently accept all G0/G1 routes, native64 labels and evidence before FT",
+    "train four full FT runs and calibrate three strategies per city",
+    "full raw-prediction recount, six E2 rows and LaTeX compilation",
+    "only then execute E3"
+  ],
+  "scope_limit": "historical full-day post-update snapshot adaptation; no strictly causal real-time-service claim",
+  "sampler_rng_rule": "numpy PCG64 Generator seeded by SeedSequence([sampler_seed, city_code, role_code]); XA city_code0, BJ1; Random Afit uses role_code99"
+}
